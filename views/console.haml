@@ -78,8 +78,7 @@
             -if @config['action'] and @config['action']['button']
               .section
                 %h4 Trigger Action Button
-                %p Soon you can trigger Action Button from here
-                //%input{:id=>'action-button-submit', :type=>:submit, :class=>'btn btn-primary', :value => @config['action']['button']['label']}
+                %input{:id=>'action-button-submit', :type=>:submit, :class=>'btn btn-primary', :value => @config['action']['button']['label']}
               
     :javascript
       SB.CurrentApp = '#{@app_slug}'; 
@@ -103,29 +102,57 @@
           return false;
         });
 
-       function event_submit_success(data, textStatus, jqXHR){
+        function event_submit_success(data, textStatus, jqXHR){
           $.sticky('<b class="green">Event Posted</b>');
-       }
-       function event_submit_before_send(jqXHR, settings){
+        }
+        function event_submit_before_send(jqXHR, settings){
           console.log(settings);
           $.sticky('<b>Posting event</b>');
-       }
+        }
 
-       function event_submit_error(data, textStatus, errorThrown){
+        function event_submit_error(data, textStatus, errorThrown){
           $.sticky('<b class="red">Event Failed</b>');
-       }
+        }
 
-       $('#action-button-submit').click(function(){
+        $('#action-button-submit').click(function(){
           var current = SB.Apps[SB.CurrentApp];
           var hasOverlay = true;
-          if(typeof(current.overlay) === 'undefined'){
+          if(typeof(current.button_overlay) === 'undefined'){
             hasOverlay = false;
           }
           if(hasOverlay){
-            var html = current.overlay({});
+            var html = current.button_overlay({});
             $('#facebox_form').prepend(html);
             $.facebox({div: '#facebox_overlay'});
           }
           return false;   
-       });
+        });
+
+        function ajaxPost() {
+          $.ajax({
+            type: 'post',
+            url: "/apps/" + this.options.app + "/button",
+            data: this.post_data,
+            success: function(response) {
+              response || (response = {});
+              response.message || (response.message = "Data sent successfully.");
+              $("#user_notification").removeClass('info');
+              SB.Notification.show(response.message, {
+                type: 'success'
+              });
+              return $(document).trigger("close.facebox");
+            },
+            error: function(response) {
+              var responseText;
+              response || (response = {});
+              response.responseText || (response.responseText = '{}');
+              responseText = JSON.parse(response.responseText);
+              responseText.message || (responseText.message = "Something went wrong!");
+              $("#user_notification").removeClass('info');
+              return SB.Notification.show(responseText.message, {
+                type: 'error'
+              });
+            }
+          });
+        }
       });
